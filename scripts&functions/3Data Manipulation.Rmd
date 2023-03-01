@@ -1,0 +1,257 @@
+---
+title: "Data Manipulation"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyverse)
+```
+
+## Selecting Columns with dplyr
+
+The select() function allows you to choose which columns to keep in a data frame. For example, to select the mpg and hp columns from the mtcars data frame, you would do:
+
+```{r cars}
+data(mtcars)
+mtcars_sel <- mtcars %>% select(mpg, hp)
+head(mtcars_sel)
+```
+
+### OR
+
+```{r}
+mtcars_gmh <- select(mtcars, gear, mpg, hp)
+mtcars_Nompg <- select(mtcars,  -mpg)
+head(mtcars_gmh)
+```
+
+## Filtering Rows with dplyr
+
+The filter() function allows you to choose which rows to keep in a data frame based on some condition. For example, to filter the mtcars data frame to only include rows where mpg is greater than 20, you would do:
+
+```{r}
+mtcars_fil <- mtcars %>% filter(mpg > 20)
+head(mtcars_fil)
+```
+
+## Sorting Rows with dplyr
+
+The arrange() function allows you to sort a data frame based on one or more columns. For example, to sort the mtcars data frame by descending mpg, you would do:
+
+```{r}
+mtcars_sort <- mtcars %>% arrange(desc(mpg))
+head(mtcars_sort)
+```
+
+## Grouping Data with dplyr
+
+The group_by() function allows you to group a data frame by one or more columns, and then apply a function to each group. For example, to group the mtcars data frame by the number of cylinders, and then calculate the mean mpg and hp for each group, you would do:
+
+```{r}
+mtcars_grp <- mtcars %>%  #take dataframe
+  group_by(cyl) %>%    # then group by cylinders
+  summarize(mean_mpg = mean(mpg), mean_hp = mean(hp)) # sumamrize the mean for each level of cyl
+head(mtcars_grp)
+```
+
+## Reshaping Data with tidyr
+
+The gather() function transforms data from wide to long format, and the spread() function transforms data from long to wide format. Another script provides more examples.\
+Please check wide_long_format.R
+
+## Joining Data with dplyr
+
+The inner_join(), left_join(), right_join(), and full_join() functions allow you to combine data from two or more data frames based on one or more common columns. For example, to join the mtcars data frame with the cars data frame based on the name column, you would do:
+
+```{r}
+cars <- data.frame(name = c("Mazda RX4", "Ford Pantera L", "Honda Civic"), country = c("Japan", "USA", "Japan"))
+mtcars <- mtcars %>% 
+  mutate(name = rownames(.)) %>% # create a new column with row names as the `name` variable
+  select(name, everything()) # move the `name` column to the front
+
+mtcars_new <- inner_join(mtcars, cars, by = "name")
+
+head(mtcars_new)
+```
+
+## mutate():
+
+Add new columns to a dataset by computing new values based on existing columns. For example, to add a new column called "disp_per_cyl" that represents the displacement per cylinder, you can use the following code:
+
+```{r}
+mtcars_n <- mtcars %>% 
+  mutate(disp_per_cyl = disp / cyl) %>% 
+  select(disp_per_cyl, everything())
+head(mtcars_n)
+```
+
+These are just a few examples of the many functions and techniques available for data manipulation in R using dplyr and tidyr. By combining these functions with other R packages for data analysis, visualization, and modeling, you can perform a wide variety
+
+# Another Example
+
+We assigned the starwars dataset - specifying it was frome dplyr using the :: - that basically means, 'look inside dplyr for starwars'
+
+```{r}
+starwars <- dplyr::starwars
+```
+
+If you take a look at the data by typing starwars, you will see it is stored as a tibble. This is a convenient way of displaying a data.frame and for all intents and purposes, behaves much the same way. It has the added advantage that it just shows you the first 10 lines of the data (known as the head).
+
+```{r}
+starwars
+```
+
+Since the tibble only shows you the first 10 rows of your data, what if you want to see more? For that you can use the print function, like so:
+
+```{r}
+print(starwars, n = 15)
+```
+
+```{r}
+starwars$name
+```
+
+So now we have the package loaded and the data ready - we can start playing around with it!
+
+## Selecting Columns
+
+```{r}
+# with names
+starwars[, c('name', 'homeworld')]
+# with indices
+starwars[, c(1, 9)]
+```
+
+### With dplyr
+
+we can do the following:
+
+```{r}
+starwars %>% select(name, homeworld)
+```
+
+Wait a minute, what does %\>% do!? This is a pipe - it essentially means, take the thing on the left and apply the function on the right to it. You can use it create chains of functions which you can easily apply to multiple data.frames if you need. It takes a bit of getting used to, but it can often clarify code. For consitency with standard R, we could have also written the code above like so:
+
+```{r}
+select(starwars, name, homeworld)
+```
+
+Both ways work and ultimately that is all that matters but for clarity and good practice, we will use the %\>% pipe to make up our data handling workflows. So what else is going on with these two tidyverse inspired function calls? Well the function select, literally chooses columns from our data.frame. Hopefully the straightforwardness of this approach is a demonstration of how these packages can make R code more readable and easier to understand.
+
+select is more powerful than just this. See some examples below:
+
+```{r}
+# choose all columns BUT name
+starwars %>% select(-name)
+# choose only columns containing an underscore
+starwars %>% select(contains("_"))
+# choose only columns beginning with "s"
+starwars %>% select(starts_with("s"))
+```
+
+## Filtering data
+
+We've seen now how to select columns using a dplyr approach - but what if we want to select rows? To do this, we need to filter the data on a given criteria. Let's say we want to just select humans from our starwars data. We can achieve this using a logical approach - i.e. extracting only rows which match our criteria - i.e. whether the individual is human in this case. Let's first see what happens when we apply a logical operation to the species column. Remember that for now, we will just use baseR.
+
+```{r}
+starwars$species == "Human"
+```
+
+All we did here is ask whether the species data is equal to the string 'Human'. This returned a logical vector of TRUE and FALSE values. If we now use this to subset our data.frame, R will only return rows where the value is TRUE. For example:
+
+```{r}
+starwars[starwars$species == "Human", ]
+```
+
+Note that you have to specify you mean species within the starwars data using a \$ operator, because otherwise R doesn't know where to look. In other words, the following will not work:
+
+\#`{r} #starwars[species == "Human", ] #`
+
+You should also note that we need a == instead of a = - this just means 'is equal to'. So what is the dplyr alternative? We can use the straightforwardly names filter function for this:
+
+```{r}
+starwars %>% filter(species == "Human")
+```
+
+Notice we use the %\>% pipe again - the reason for this will hopefully become clear soon! You might be wondering at this point, that there doesn't seem to be a huge difference between these two approaches, other than the way the code looks. Where the filter command really becomes useful is when you use it for multiple different variables.
+
+Let's suppose we want to extract all individuals that are Human and that are from Tatooine as their homeworld. With baseR, we would do the following:
+
+```{r}
+starwars[which(starwars$species == "Human" & starwars$homeworld == "Tatooine"), ]
+```
+
+Note that here, all which does is make sure we subset the data.frame properly. What about with dplyr? Well this would work:
+
+```{r}
+starwars %>% filter(species == "Human", homeworld == "Tatooine")
+```
+
+You can see how dplyr makes filtering on multiple variables much more straightforward and cleaner
+
+## Filtering AND selecting data
+
+What if you want to do multiple things to a dataset at once? Perhaps you need to get your data into a certain format or just want to subset it to only the variables you are interested in. As you get more and more experienced with R, you will find this is something you want to do regularly. It makes sense to manage your data, stripping it down to the key values of interest. This is part of the principle of tidy data.
+
+Let's return to our starwars dataset - what if we want to get the name, height and year of birth for all human species? If we use baseR, we would do it this way:
+
+```{r}
+starwars[starwars$species == "Human", c("name", "height", "birth_year")]
+```
+
+This sort of data manipulation requires us to first filter on the rows using starwars\$species == "Human". Remember previously, when we used square brackets to extract data from a matrix and then a data.frame? This is exactly the same thing.
+
+Next, we select the columns we want in the second part of the brackets using c("name", "height", "birth_year"). This is fairly straightforward, even using baseR but you can imagine how this could be complicated if we wanted to select many different columns or filter on different variables.
+
+What is the dplyr solution?
+
+```{r}
+starwars %>% filter(species == "Human") %>% select(name, height, birth_year)
+```
+
+## Summarising data
+
+Where dplyr really excels is when you want to extract some kind of summary information from your data. Let's start with a very straightforward example using our starwars data. What if we want to count the number of different species there are in the data? First, let's actually look at the species present.
+
+```{r}
+starwars$species
+```
+
+You can see there are few different ones, although even from this it is fairly obvious humans are going to be the most numerous. If we want to count how many species there are, all we need to do is count the occurrence of each of these. Before we look at the dplyr solution, we will take a look at one more baseR way to achieve this.
+
+```{r}
+table(starwars$species)
+```
+
+This works and is fast but the main disadvantage is that our output is no longer a data.frame. It is also much more difficult to scale this approach up if we wish to group our dataset by multiple variables. But first, the dplyr equivalent of above is also straightforward:
+
+```{r}
+starwars %>% group_by(species) %>% tally()
+```
+
+All we have done here is first grouped our dataset by species using group_by and then counted the number of rows in each group using tally.
+
+group_by can really come into its own when you want to count or tally data based on several variables. Let's say we want to count the number of each gender of within each species. We would do it like so.
+
+```{r}
+starwars %>% group_by(species, gender) %>% tally()
+```
+
+We can do a lot more than just count occurrences with this functionality from dplyr. Perhaps we want to know the average height and mass of each species?
+
+```{r}
+starwars %>% group_by(species) %>% summarise(mean_height = mean(height, na.rm = T),
+                                             mean_mass = mean(mass, na.rm = T))
+```
+
+Here all we did was use the summarise function to calculate mean height and mass. Since we used the mean function on both variables, we can actually simplify this even further like so:
+
+```{r}
+starwars %>% group_by(species) %>% summarise_at(vars(height, mass), mean, na.rm = T)
+```
+
+So this time we used summarise_at and specified the variables we wanted to summarise with the vars function.
+
+Summarising data in this way is a useful skill, especially when you want to get a feel for what your dataset shows or you need to break it down into more understandable subsets. As we turn next to more advanced plotting using ggplot2, you will see that manipulating data is especially useful when you want create certain types of plots.
